@@ -1,0 +1,29 @@
+{
+  "name": "f1-system",
+  "private": true,
+  "packageManager": "pnpm@10.22.0",
+  "engines": { "node": ">=24.11.0" },
+  "scripts": {
+    "dev": "dotenv -e .env -- pnpm --parallel --filter frontend --filter @gem-crm/backend-api-gateway --filter @gem-crm/backend-api-auth dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "db:generate": "pnpm --filter @gem-crm/backend-api-auth db:generate",
+    "db:migrate": "pnpm --filter @gem-crm/backend-api-auth db:migrate",
+    "infra:up": "docker compose up -d postgres mailpit",
+    "infra:down": "docker compose down",
+    "docker:dev": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d",
+    "docker:dev:build": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build",
+    "docker:dev:install": "docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm frontend pnpm install --frozen-lockfile && docker compose -f docker-compose.yml -f docker-compose.dev.yml restart backend-api-auth backend-api-gateway frontend",
+    "docker:dev:logs": "docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f",
+    "docker:dev:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "dotenv-cli": "^10.0.0",
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "typescript-eslint": "^8.71.0",
+    "typescript": "~5.9.3"
+  }
+}

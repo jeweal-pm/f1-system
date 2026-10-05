@@ -1,0 +1,20 @@
+# ADR-0004: ตัดสินใจใช้ tailwind 
+
+- **Status:** Accepted
+- **Date:** 2026-10-04
+- **Deciders:** Jakapong Chan-o ( PM )
+
+
+## Context
+
+Dveloper มีวิธีการจัด Ui Styling ที่แตกต่างกันออกไปตามประสบการณ์การใช้งาน Css ของแต่ละคน ซึ่งทำให้ยากต่อการ Maintanance
+
+
+## Decision
+
+ตัดสินใจ นำ Tailwild มาเพื่อลดปัญหา gap ด้านความรู้ของ css ใน ทีม Developer
+
+
+กติกาที่ทีมต้องทำตาม:
+- ต้องใช้ Css classes ที่ tailwind จัดเตรียมไว้ให้เท่านั้น จะมีการเขียนไหม่ต่อเมื่อเป็นงาน Custom จริงๆ
+
