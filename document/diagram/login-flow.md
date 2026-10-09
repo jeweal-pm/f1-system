@@ -1,26 +1,77 @@
 # Login Flow Diagrams
 
-- **Last updated:** 2026-10-04
+- **Last updated:** 2026-10-09
 - **ต้นฉบับ:** Excalidraw (แนบลิงก์ไฟล์ต้นฉบับที่นี่)
 
 > Diagram เขียนด้วย Mermaid แสดงผลได้ใน GitHub, GitLab, VS Code (ติดตั้ง extension Markdown Preview Mermaid)
 
 ## 1. ภาพรวม Flow หน้า /login
 
+ล็อกบัญชี 1 นาทีเมื่อใส่ password ผิดครบ 3 ครั้ง ดู [ADR-0012](../adr/0012-change-flow-login.md)
+
 ```mermaid
 flowchart TD
     A["/login"] --> B{"Login"}
     B -->|"login ปกติ"| C["กรอก email + password"]
     B -->|"ลืมรหัสผ่าน"| F["Forgot password"]
-    C --> D{"ถูกต้อง?"}
-    D -->|"ใช่"| E["หน้า Default"]
-    D -->|"ไม่"| C
+    C --> D{"Login สำเร็จ?"}
+    D -->|"ใช่"| E["Redirect ไปหน้า Home"]
+    D -->|"ไม่"| H{"ผิดครบ 3 ครั้ง?"}
+    H -->|"ยัง (เหลืออีก n ครั้ง)"| C
+    H -->|"ครบ"| L["รอ 1 นาที<br/>(นับถอยหลัง)"]
+    L --> C
     F --> G["ระบบ generate password ใหม่<br/>ส่งไปที่ email"]
     G --> C
     E -.->|"เมื่อต้องการ (ไม่บังคับ)"| P["Super Admin Profile page<br/>เปลี่ยน password"]
 ```
 
-## 2. สร้าง User ผ่าน CRM
+## 2. Login และการล็อกบัญชีชั่วคราว
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant FE as Frontend (/login)
+    participant BE as Backend API
+    participant DB as Database
+
+    U->>FE: เปิดหน้า Login
+    U->>FE: กรอก email + password แล้วกด Login
+    FE->>BE: POST /auth/login (email, password)
+    BE->>DB: ค้นหา user จาก email
+    DB-->>BE: ข้อมูล user (password_hash, failed_login_count, locked_until)
+
+    alt ถูกล็อกอยู่ (locked_until > now)
+        BE-->>FE: 423 Locked + เวลาที่เหลือ
+        FE-->>U: แจ้ง กรุณารอ 1 นาที พร้อมนับถอยหลัง
+    else ไม่ได้ถูกล็อก
+        BE->>BE: ตรวจสอบ password กับ password_hash
+
+        alt password ถูกต้อง
+            BE->>DB: failed_login_count = 0, locked_until = null, last_login_at = now
+            BE->>DB: สร้าง session
+            BE->>DB: บันทึก login attempt (success)
+            BE-->>FE: 200 + access token
+            FE-->>U: Redirect ไปหน้า Home
+        else password ไม่ถูกต้อง
+            BE->>DB: failed_login_count + 1
+            BE->>DB: บันทึก login attempt (failed)
+
+            alt ผิดยังไม่ครบ 3 ครั้ง
+                BE-->>FE: 401 + จำนวนครั้งที่เหลือ
+                FE-->>U: แจ้ง email หรือ password ไม่ถูกต้อง (เหลืออีก n ครั้ง)
+            else ผิดครบ 3 ครั้ง
+                BE->>DB: locked_until = now + 1 นาที, failed_login_count = 0
+                BE-->>FE: 423 Locked + 60 วินาที
+                FE-->>U: แจ้ง ใส่ password ผิด 3 ครั้ง กรุณารอ 1 นาที
+                FE->>FE: นับถอยหลัง 60 วินาที แจ้งเวลาที่จะกด Login ใหม่ได้
+                FE-->>U: ครบเวลา เปิดให้ Login ใหม่ได้
+            end
+        end
+    end
+```
+
+## 3. สร้าง User ผ่าน CRM
 
 ```mermaid
 sequenceDiagram
@@ -36,7 +87,7 @@ sequenceDiagram
     API-->>U: แจ้ง email + password (ช่องทาง: ดู Q1)
 ```
 
-## 3. Forgot Password
+## 4. Forgot Password
 
 ```mermaid
 sequenceDiagram
@@ -56,7 +107,7 @@ sequenceDiagram
     U->>API: POST /auth/login (email, password ใหม่)
 ```
 
-## 4. เปลี่ยน Password ที่ Profile Page
+## 5. เปลี่ยน Password ที่ Profile Page
 
 ```mermaid
 sequenceDiagram
@@ -80,5 +131,5 @@ sequenceDiagram
 ## หมายเหตุ
 
 Flow ต้นฉบับมีส่วนที่เป็นสีจาง (popup บังคับเปลี่ยนรหัสหลัง login ครั้งแรก
-และ log out หลัง save) diagram ข้างบนวาดตามการตัดสินใจล่าสุดใน ADR-0003
+และ log out หลัง save) diagram ข้างบนวาดตามการตัดสินใจล่าสุดใน ADR-0011
 ซึ่งเลือก Profile page แทน popup ถ้าทีมยืนยันว่าส่วนสีจางยังอยู่ใน scope ต้องแก้ diagram นี้ (ดู Q4)
