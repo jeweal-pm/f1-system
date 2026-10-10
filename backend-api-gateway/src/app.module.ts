@@ -3,7 +3,7 @@ import { AppController } from "./app.controller";
 import { LoggerModule } from "nestjs-pino";
 
 @Module({
-  imports: [LoggerModule.forRoot({ pinoHttp: { redact: { paths: ["req.headers.authorization", "req.headers.x-api-key", "req.body.password"], censor: "[REDACTED]" } } })],
+  imports: [LoggerModule.forRoot({ pinoHttp: { redact: { paths: ["req.headers.authorization", "req.headers.cookie", "req.headers.x-api-key", "req.body.password", "req.body.currentPassword", "req.body.newPassword", "req.body.confirmPassword"], censor: "[REDACTED]" } } })],
   controllers: [AppController],
 })
 export class AppModule {}

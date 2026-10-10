@@ -37,12 +37,13 @@ sequenceDiagram
 
     U->>FE: เปิดหน้า Login
     U->>FE: กรอก email + password แล้วกด Login
-    FE->>BE: POST /auth/login (email, password)
+    FE->>BE: POST /api/auth/sign-in/email (email, password)
     BE->>DB: ค้นหา user จาก email
     DB-->>BE: ข้อมูล user (password_hash, failed_login_count, locked_until)
 
     alt ถูกล็อกอยู่ (locked_until > now)
-        BE-->>FE: 423 Locked + เวลาที่เหลือ
+        BE->>DB: บันทึก login attempt (failed)
+        BE-->>FE: 423 Locked + retryAfterSeconds
         FE-->>U: แจ้ง กรุณารอ 1 นาที พร้อมนับถอยหลัง
     else ไม่ได้ถูกล็อก
         BE->>BE: ตรวจสอบ password กับ password_hash
@@ -51,18 +52,18 @@ sequenceDiagram
             BE->>DB: failed_login_count = 0, locked_until = null, last_login_at = now
             BE->>DB: สร้าง session
             BE->>DB: บันทึก login attempt (success)
-            BE-->>FE: 200 + access token
+            BE-->>FE: 200 + HttpOnly session cookie
             FE-->>U: Redirect ไปหน้า Home
         else password ไม่ถูกต้อง
             BE->>DB: failed_login_count + 1
             BE->>DB: บันทึก login attempt (failed)
 
             alt ผิดยังไม่ครบ 3 ครั้ง
-                BE-->>FE: 401 + จำนวนครั้งที่เหลือ
+                BE-->>FE: 401 + attemptsRemaining
                 FE-->>U: แจ้ง email หรือ password ไม่ถูกต้อง (เหลืออีก n ครั้ง)
             else ผิดครบ 3 ครั้ง
                 BE->>DB: locked_until = now + 1 นาที, failed_login_count = 0
-                BE-->>FE: 423 Locked + 60 วินาที
+                BE-->>FE: 423 Locked + retryAfterSeconds: 60
                 FE-->>U: แจ้ง ใส่ password ผิด 3 ครั้ง กรุณารอ 1 นาที
                 FE->>FE: นับถอยหลัง 60 วินาที แจ้งเวลาที่จะกด Login ใหม่ได้
                 FE-->>U: ครบเวลา เปิดให้ Login ใหม่ได้
@@ -80,11 +81,11 @@ sequenceDiagram
     participant DB
     participant U as User
 
-    CRM->>API: POST /users (email, name, role)
+    CRM->>API: POST /api/v1/users (email, name, role)
     API->>API: generate password (secure random)
     API->>DB: บันทึก user + password hash
     API-->>CRM: 201 Created (ไม่มี password)
-    API-->>U: แจ้ง email + password (ช่องทาง: ดู Q1)
+    API-->>U: ส่ง email พร้อม password เริ่มต้น (ดู ADR-0010)
 ```
 
 ## 4. Forgot Password
@@ -96,7 +97,7 @@ sequenceDiagram
     participant DB
     participant Mail as Email Service
 
-    U->>API: POST /auth/forgot-password (email)
+    U->>API: POST /api/v1/auth/forgot-password (email)
     API-->>U: 202 Accepted (ตอบเหมือนกันทุกกรณี)
     alt email มีในระบบ
         API->>API: generate password ใหม่
@@ -104,7 +105,7 @@ sequenceDiagram
         API->>Mail: ส่ง password ใหม่
         Mail-->>U: email พร้อม password ใหม่
     end
-    U->>API: POST /auth/login (email, password ใหม่)
+    U->>API: POST /api/auth/sign-in/email (email, password ใหม่)
 ```
 
 ## 5. เปลี่ยน Password ที่ Profile Page
@@ -121,7 +122,7 @@ sequenceDiagram
     UI->>API: PUT /me/password
     alt ผ่าน
         API-->>UI: 204
-        UI-->>U: แจ้งเปลี่ยนสำเร็จ (log out หรือไม่: ดู Q5)
+        UI-->>U: แจ้งเปลี่ยนสำเร็จ (session ปัจจุบันอยู่ต่อ, session อื่นถูก invalidate)
     else ไม่ผ่าน
         API-->>UI: 400 + violations
         UI-->>U: แสดง error
@@ -132,4 +133,4 @@ sequenceDiagram
 
 Flow ต้นฉบับมีส่วนที่เป็นสีจาง (popup บังคับเปลี่ยนรหัสหลัง login ครั้งแรก
 และ log out หลัง save) diagram ข้างบนวาดตามการตัดสินใจล่าสุดใน ADR-0011
-ซึ่งเลือก Profile page แทน popup ถ้าทีมยืนยันว่าส่วนสีจางยังอยู่ใน scope ต้องแก้ diagram นี้ (ดู Q4)
+ซึ่งเลือก Profile page แทน popup ตาม ADR-0011

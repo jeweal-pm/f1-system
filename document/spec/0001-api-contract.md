@@ -29,7 +29,7 @@ Response `201 Created`:
 }
 ```
 
-> ⚠️ Response **ไม่ส่ง password กลับไปให้ CRM** จนกว่าจะตอบ Q1 ได้ว่าจะแจ้ง credential ทางไหน
+> Response **ไม่ส่ง password กลับไปให้ CRM**; ระบบส่ง credential ไปยัง email ของ user ตาม [ADR-0010](../adr/0010-system-generates-password.md)
 
 | Status | กรณี |
 |---|---|
@@ -54,9 +54,14 @@ Response ถูกกำหนดโดย Better Auth และส่ง sessio
 
 | Status | กรณี |
 |---|---|
-| 401 | email หรือ password ผิด (ข้อความเดียวกันทุกกรณี) |
-| 423 | บัญชีถูกล็อกชั่วคราว (ดู Q7) |
+| 401 | email หรือ password ผิด; ส่ง `attemptsRemaining` (0–2) โดยใช้รูปแบบเดียวกันไม่ว่า email จะมีบัญชีหรือไม่ |
+| 423 | ผิดครบ 3 ครั้งหรือยังอยู่ในช่วงล็อก; ส่ง `retryAfterSeconds` |
 | 429 | เรียกถี่เกินไป (rate limit) |
+
+เมื่อผิดครบ 3 ครั้ง ระบบล็อกบัญชี 1 นาทีตาม [ADR-0012](../adr/0012-change-flow-login.md)
+และบันทึกทุก attempt ลงตาราง `auth.LoginAttempt` โดยเก็บ email เป็น HMAC-SHA-256 hash
+ไม่บันทึก email ดิบในประวัติ attempt ใช้ `auth.LoginLockout` ที่ keyed ด้วย hash เดียวกัน
+เพื่อให้ lockout/attempt count ไม่เปิดเผยว่า email มีบัญชีหรือไม่
 
 ## 3. Forgot Password
 
@@ -90,7 +95,7 @@ Request:
 }
 ```
 
-> `currentPassword` เป็น [ข้อเสนอ] ดู Q6
+> `currentPassword` is required, per the confirmed decision in [Open Questions](../open-questions.md#resolved-login-and-password-decisions).
 
 Response `204 No Content`
 

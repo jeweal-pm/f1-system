@@ -22,8 +22,12 @@ export function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const [serverError, setServerError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<CredentialsValues>({
     resolver: zodResolver(credentialsSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
+    shouldFocusError: true,
     defaultValues: demoAccounts.length > 0 ? { email: demoAccounts[0]!.email, password: demoAccounts[0]!.password } : undefined,
   });
 
@@ -34,26 +38,55 @@ export function LoginForm() {
     setValue("password", demoAccount.password);
   }, [setValue]);
 
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const timer = window.setInterval(() => {
+      setLockoutSeconds((seconds) => Math.max(0, seconds - 1));
+    }, 1_000);
+    return () => window.clearInterval(timer);
+  }, [lockoutSeconds > 0]);
+
   const onSubmit = handleSubmit(async (values) => {
     setServerError("");
     setSubmitting(true);
     try {
       const result = await authClient.signIn.email({ email: values.email, password: values.password, rememberMe });
       if (result.error) {
-        setServerError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+        const error = result.error as unknown as {
+          status?: number;
+          attemptsRemaining?: number;
+          retryAfterSeconds?: number;
+          error?: {
+            attemptsRemaining?: number;
+            retryAfterSeconds?: number;
+          };
+        };
+        const retryAfterSeconds = error.retryAfterSeconds ?? error.error?.retryAfterSeconds;
+        const attemptsRemaining = error.attemptsRemaining ?? error.error?.attemptsRemaining;
+        if (error.status === 423 || retryAfterSeconds) {
+          const seconds = Math.max(1, retryAfterSeconds ?? 60);
+          setLockoutSeconds(seconds);
+          setServerError(`ใส่รหัสผ่านผิด 3 ครั้ง กรุณารอ ${seconds} วินาที`);
+        } else if (error.status === 429) {
+          setServerError("มีการลองเข้าสู่ระบบบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่");
+        } else if (attemptsRemaining !== undefined) {
+          setServerError(`อีเมลหรือรหัสผ่านไม่ถูกต้อง (เหลืออีก ${attemptsRemaining} ครั้ง)`);
+        } else {
+          setServerError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+        }
         return;
       }
       router.replace("/");
       router.refresh();
     } catch {
-      setServerError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+      setServerError("ไม่สามารถเข้าสู่ระบบได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setSubmitting(false);
     }
   });
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6" noValidate>
+    <form onSubmit={onSubmit} className="w-full min-w-0 space-y-6" noValidate>
       {demoAccounts.map((account) => (
         <button
           key={account.email}
@@ -62,10 +95,10 @@ export function LoginForm() {
             setValue("email", account.email, { shouldValidate: true });
             setValue("password", account.password, { shouldValidate: true });
           }}
-          className={`flex min-h-[84px] w-full items-start gap-4 rounded-xl px-5 py-4 text-left text-[16px] leading-6 text-[#31515d] transition hover:ring-2 hover:ring-[#54bfd7]/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#45b7d0] ${account.highlighted ? "bg-[#d9f2fa]" : "bg-[#f5f5f7]"}`}
+          className={`flex min-h-[84px] w-full min-w-0 items-start gap-4 rounded-xl px-5 py-4 text-left text-[16px] leading-6 text-[#31515d] transition hover:ring-2 hover:ring-[#54bfd7]/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#45b7d0] ${account.highlighted ? "bg-[#d9f2fa]" : "bg-[#f5f5f7]"}`}
         >
           <span aria-hidden="true" className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-[#55bed6] text-[12px] font-bold text-[#55bed6]">i</span>
-          <span><span>Use Email : <strong>{account.email}</strong></span><br /><span>Password : <strong>{account.password}</strong></span></span>
+          <span className="min-w-0 break-words"><span>Use Email : <strong>{account.email}</strong></span><br /><span>Password : <strong>{account.password}</strong></span></span>
         </button>
       ))}
 
@@ -86,13 +119,13 @@ export function LoginForm() {
         {errors.password && <p className="px-1 text-xs text-red-600">{errors.password.message}</p>}
       </div>
 
-      <div className="mt-8 flex items-center justify-between pt-1 text-[15px]">
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-y-3 pt-1 text-[15px]">
         <label className="flex items-center gap-2.5 text-[#657681]"><input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} className="size-5 rounded border border-[#cbdce2] accent-[#007570]" /> Remember this device</label>
         <Link href="/forgot-password" className="font-medium text-[#4289f5] hover:underline">Forgot Password?</Link>
       </div>
-      {serverError && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{serverError}</p>}
-      <button disabled={submitting} type="submit" className="mt-[19px] h-[64px] w-full rounded-xl bg-[#006d70] text-[17px] font-semibold text-white shadow-sm transition hover:bg-[#005a5d] disabled:cursor-wait disabled:opacity-65">
-        {submitting ? "Logging in…" : "Log in"}
+      {serverError && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{lockoutSeconds > 0 ? `บัญชีถูกล็อกชั่วคราว กรุณารออีก ${lockoutSeconds} วินาที` : serverError}</p>}
+      <button disabled={submitting || lockoutSeconds > 0} type="submit" className="mt-[19px] h-[64px] w-full rounded-xl bg-[#006d70] text-[17px] font-semibold text-white shadow-sm transition hover:bg-[#005a5d] disabled:cursor-wait disabled:opacity-65">
+        {submitting ? "Logging in…" : lockoutSeconds > 0 ? `Try again in ${lockoutSeconds}s` : "Log in"}
       </button>
     </form>
   );

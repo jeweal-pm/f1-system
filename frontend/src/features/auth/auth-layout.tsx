@@ -1,7 +1,10 @@
 export function AuthLayout({ children, title, loginStyle = false }: Readonly<{ children: React.ReactNode; title: string; loginStyle?: boolean }>) {
   return (
-    <main className={`flex min-h-screen flex-col px-5 ${loginStyle ? "items-start" : "items-center"}`}>
-      <section className={`w-full ${loginStyle ? "mt-[15px] max-w-[550px]" : "mt-[11vh] max-w-[360px]"}`}>
+    <main className={`flex min-h-screen flex-col items-center px-5 ${loginStyle ? "w-screen" : ""}`}>
+      <section
+        className={`w-full ${loginStyle ? "my-auto min-w-0 max-w-[550px]" : "mt-[11vh] max-w-[360px]"}`}
+        style={loginStyle ? { width: "min(550px, calc(100vw - 2.5rem))" } : undefined}
+      >
         <h1 className={`font-semibold tracking-tight text-[#18232b] ${loginStyle ? "mb-[53px] text-[30px] leading-9" : "mb-5 text-[18px]"}`}>{title}</h1>
         {children}
       </section>

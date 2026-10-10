@@ -23,7 +23,7 @@
 - Login ด้วย social / SSO
 - Multi-factor authentication (MFA)
 
-> ⚠️ ส่วนที่เป็นสีจางใน flow ยังไม่ยืนยันว่าอยู่ใน scope ดู Q4
+ส่วนที่เป็นสีจางเรื่องบังคับเปลี่ยน password หลัง login ครั้งแรกไม่อยู่ใน scope ตาม [ADR-0011](../adr/0011-change-password-via-profile-page.md)
 
 ## 3. ผู้เกี่ยวข้อง (Actors)
 
@@ -44,13 +44,13 @@
 
 | ID | กฎ | ที่มา |
 |---|---|---|
-| BR-01 | CRM **ไม่มีหน้าที่สร้าง password** CRM แค่ยิง API ขอสร้าง user ระบบเป็นผู้ generate password | [จาก flow] ดู ADR-0002 |
-| BR-02 | Password ที่ระบบ generate ต้องสุ่มด้วย cryptographically secure random และผ่าน password policy | [จาก flow] "OTP concept" |
+| BR-01 | CRM **ไม่มีหน้าที่สร้าง password** CRM แค่ยิง API ขอสร้าง user ระบบเป็นผู้ generate password | [ADR-0010] |
+| BR-02 | Password ที่ระบบ generate ต้องสุ่มด้วย cryptographically secure random และผ่าน password policy; ไม่มีวันหมดอายุ | [ADR-0010](../adr/0010-system-generates-password.md), [Password Policy](0003-password-policy.md) |
 | BR-03 | Forgot password: ระบบ generate password ใหม่ และส่งไปที่ email ของ user | [จาก flow] |
-| BR-04 | ไม่บังคับให้ user เปลี่ยน password หลัง login ครั้งแรก user เปลี่ยนเองได้ที่ Profile page | [จาก flow] ดู ADR-0003 |
-| BR-05 | Password ที่ user ตั้งเองต้องผ่าน [Password Policy](password-policy.md) | [จาก flow] |
+| BR-04 | ไม่บังคับให้ user เปลี่ยน password หลัง login ครั้งแรก user เปลี่ยนเองได้ที่ Profile page | [ADR-0011] |
+| BR-05 | Password ที่ user ตั้งเองต้องผ่าน [Password Policy](0003-password-policy.md) | [จาก flow] |
 | BR-06 | ช่อง Confirm password ต้องตรงกับ Password | [จาก flow] |
-| BR-07 | Login ผิดเกินจำนวนครั้งที่กำหนด ให้ล็อกบัญชีชั่วคราว (จำนวนครั้ง: ดู Q7) | [ข้อเสนอ] |
+| BR-07 | ใส่ password ผิดติดกัน 3 ครั้งให้ล็อกบัญชี 1 นาที และแจ้งจำนวนครั้งที่เหลือ/เวลาที่เหลือตาม ADR-0012 | [ADR-0012] |
 
 ## 6. Acceptance Criteria
 
@@ -66,7 +66,7 @@
 **AC-02 สร้าง user ผ่าน CRM (US-02)**
 - Given CRM ส่ง request สร้าง user พร้อม email ที่ยังไม่มีในระบบ
 - When ระบบรับ request
-- Then สร้าง user และ generate password ตาม BR-02 แล้วแจ้ง credential ตามช่องทางที่ตกลง (ดู Q1)
+- Then สร้าง user และ generate password ตาม BR-02 แล้วส่ง credential ทาง email ตาม ADR-0010
 
 - Given email ซ้ำกับที่มีในระบบ
 - Then ตอบกลับ `409 Conflict` และไม่สร้าง user
@@ -74,16 +74,16 @@
 **AC-03 Forgot password (US-03)**
 - Given user อยู่ที่หน้า forgot password
 - When กรอก email และกดส่ง
-- Then ระบบแสดงข้อความ "หากอีเมลนี้มีอยู่ในระบบ เราได้ส่งรหัสผ่านใหม่ไปให้แล้ว" (ข้อความเดียวกันทุกกรณี ดู Q8)
+- Then ระบบแสดงข้อความ "หากอีเมลนี้มีอยู่ในระบบ เราได้ส่งรหัสผ่านใหม่ไปให้แล้ว" (ข้อความเดียวกันทุกกรณี)
 - And ถ้า email มีอยู่จริง ระบบ generate password ใหม่, ส่ง email และ password เดิมใช้ไม่ได้อีก
 
 **AC-04 เปลี่ยน password (US-04)**
 - Given user login อยู่ และอยู่ที่ Profile page
 - When กรอก password ใหม่ที่ผ่าน policy และ confirm ตรงกัน แล้วกด Save
-- Then บันทึก password ใหม่สำเร็จ (การ log out หลังเปลี่ยน: ดู Q5)
+- Then บันทึก password ใหม่สำเร็จและ invalidate session อื่น โดย session ปัจจุบันยังใช้งานต่อได้
 
 - Given password ไม่ผ่าน policy หรือ confirm ไม่ตรง
-- Then แสดง error ตาม [Password Policy](password-policy.md) และไม่บันทึก
+- Then แสดง error ตาม [Password Policy](0003-password-policy.md) และไม่บันทึก
 
 ## 7. Non-functional Requirements [ข้อเสนอ]
 

@@ -49,15 +49,13 @@
 
 ## Cookie และ consent
 
-ใช้ cookie session ที่จำเป็นต่อการเข้าสู่ระบบตาม Better Auth และยังไม่โหลด analytics หรือ marketing script
-ใน initial setup เพราะ [ADR-0009](0009-cookie-consent-approach.md) ยังเป็น Proposed และ consent copy
-ต้องผ่านการทบทวนจาก DPO ก่อน go-live รายละเอียดข้อกำหนดอยู่ที่ [Cookie & Consent Spec](../spec/0004-cookie-and-consent.md)
+ปัจจุบันใช้เฉพาะ cookie session ที่จำเป็นต่อการเข้าสู่ระบบตาม Better Auth ไม่มี analytics หรือ marketing tracking จึงยังไม่มี consent banner หรือ consent log หากจะเพิ่ม cookie/script ที่ไม่จำเป็น ต้องทบทวน [ADR-0009](0009-cookie-consent-approach.md) และ [Cookie & Consent Spec](../spec/0004-cookie-and-consent.md) กับ DPO/privacy owner ก่อนเปิดใช้
 
 ## เรื่องที่ต้องตัดสินใจก่อน production
 
 - กำหนด SMTP จริงและทดสอบการส่ง/ส่งซ้ำ/การกู้คืนเมื่อส่งไม่สำเร็จ
 - เปลี่ยน `AUTH_SECRET`, `CRM_API_KEY` และฐานข้อมูลเป็น secrets ที่จัดการภายนอก repository
 - ให้ DPO ทบทวน consent banner และ privacy notice ก่อนเพิ่ม third-party cookies หรือ analytics
-- กำหนด policy การล็อกบัญชีหลัง sign-in ล้มเหลว (Q7 ใน login requirements)
+- ใช้ policy ล็อกบัญชีตาม [ADR-0012](0012-change-flow-login.md)
 - ระบุ deployment topology, TLS termination, backup/restore และ monitoring สำหรับทุก service
 - กำหนด trusted ingress/client-IP header สำหรับ rate limit; ห้ามรับ forwarded IP จาก client โดยตรง

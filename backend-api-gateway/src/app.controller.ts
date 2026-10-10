@@ -36,15 +36,17 @@ export class AppController {
 
   private async forwardToAuth(path: string, request: Request, response: Response) {
     const target = `${process.env.AUTH_SERVICE_URL ?? "http://localhost:3101"}${path}`;
+    const headers = new Headers({ "content-type": "application/json" });
+    for (const name of ["cookie", "origin", "x-api-key", "user-agent"] as const) {
+      const value = request.header(name);
+      if (value) headers.set(name, value);
+    }
     let upstream: globalThis.Response;
     try {
       upstream = await fetch(target, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-api-key": request.header("x-api-key") ?? "",
-        },
-        body: JSON.stringify(request.body),
+        method: request.method,
+        headers,
+        body: request.method === "GET" || request.method === "HEAD" ? undefined : JSON.stringify(request.body),
         signal: AbortSignal.timeout(5_000),
       });
     } catch {
@@ -52,6 +54,8 @@ export class AppController {
     }
     const retryAfter = upstream.headers.get("retry-after");
     if (retryAfter) response.setHeader("retry-after", retryAfter);
+    const cookies = upstream.headers.getSetCookie();
+    if (cookies.length > 0) response.setHeader("set-cookie", cookies);
     if (upstream.status === HttpStatus.NO_CONTENT) {
       response.status(HttpStatus.NO_CONTENT).end();
       return;

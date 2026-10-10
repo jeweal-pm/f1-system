@@ -38,13 +38,20 @@ export class AuthController {
   @Put("api/v1/me/password")
   @HttpCode(HttpStatus.NO_CONTENT)
   async changePassword(@Req() request: Request, @Body() body: unknown) {
-    const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
+    const headers = fromNodeHeaders(request.headers);
+    const session = await auth.api.getSession({ headers });
     if (!session) throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
     const input = this.authService.validatePasswordChange(body);
     const result = await auth.api.changePassword({
-      headers: fromNodeHeaders(request.headers),
-      body: { currentPassword: input.currentPassword, newPassword: input.newPassword, revokeOtherSessions: true },
+      headers,
+      body: { currentPassword: input.currentPassword, newPassword: input.newPassword, revokeOtherSessions: false },
+      asResponse: true,
     });
-    if (!result) throw new HttpException("Could not update password", HttpStatus.UNAUTHORIZED);
+    if (!result.ok) {
+      const details = await result.json().catch(() => null) as { code?: string; message?: string } | null;
+      if (details?.code === "INVALID_PASSWORD") throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+      throw new HttpException(details ?? "Could not update password", result.status);
+    }
+    await auth.api.revokeOtherSessions({ headers });
   }
 }

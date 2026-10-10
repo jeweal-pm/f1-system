@@ -4,11 +4,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { authClient } from "@/lib/auth-client";
 
 const schema = z.object({
   currentPassword: z.string().min(1, "กรุณากรอกรหัสผ่านปัจจุบัน"),
-  newPassword: z.string().min(8, "อย่างน้อย 8 ตัวอักษร").max(64, "ไม่เกิน 64 ตัวอักษร").regex(/[A-Z]/, "ต้องมีตัวพิมพ์ใหญ่").regex(/[a-z]/, "ต้องมีตัวพิมพ์เล็ก").regex(/[0-9]/, "ต้องมีตัวเลข"),
+  newPassword: z.string().min(4, "อย่างน้อย 4 ตัวอักษร").max(64, "ไม่เกิน 64 ตัวอักษร"),
   confirmPassword: z.string(),
 }).refine((values) => values.newPassword === values.confirmPassword, { path: ["confirmPassword"], message: "รหัสผ่านยืนยันไม่ตรงกัน" });
 
@@ -17,15 +16,24 @@ type Values = z.infer<typeof schema>;
 export function PasswordChangeForm() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<Values>({ resolver: zodResolver(schema) });
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<Values>({
+    resolver: zodResolver(schema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
+    shouldFocusError: true,
+  });
 
   const onSubmit = handleSubmit(async ({ currentPassword, newPassword }) => {
     setBusy(true);
     setMessage("");
     try {
-      const result = await authClient.changePassword({ currentPassword, newPassword, revokeOtherSessions: true });
-      if (result.error) {
-        setMessage(result.error.status === 401 ? "รหัสผ่านปัจจุบันไม่ถูกต้อง" : "เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองอีกครั้ง");
+      const response = await fetch("/api/v1/me/password", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword, confirmPassword: newPassword }),
+      });
+      if (!response.ok) {
+        setMessage(response.status === 401 ? "รหัสผ่านปัจจุบันไม่ถูกต้อง" : "เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองอีกครั้ง");
         return;
       }
       reset();
@@ -50,7 +58,7 @@ export function PasswordChangeForm() {
           {errors[name] && <p className="mt-1 text-xs text-red-600">{errors[name]?.message}</p>}
         </div>
       ))}
-      <p className="text-xs leading-5 text-[#687887]">ใช้ 8–64 ตัวอักษร และมีตัวพิมพ์ใหญ่ ตัวพิมพ์เล็ก และตัวเลข</p>
+      <p className="text-xs leading-5 text-[#687887]">ใช้รหัสผ่าน 4–64 ตัวอักษร โดยไม่จำกัดรูปแบบตัวอักษร</p>
       {message && <p role="status" className="text-xs text-[#006c68]">{message}</p>}
       <button disabled={busy} className="h-10 rounded bg-[#006d68] px-5 text-sm font-semibold text-white hover:bg-[#005a56] disabled:opacity-60">{busy ? "กำลังบันทึก…" : "บันทึกรหัสผ่าน"}</button>
     </form>

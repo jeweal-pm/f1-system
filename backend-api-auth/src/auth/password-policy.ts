@@ -2,11 +2,8 @@ import { randomInt } from "node:crypto";
 import { z } from "zod";
 
 export const passwordSchema = z.string()
-  .min(8, "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร")
+  .min(4, "รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร")
   .max(64, "รหัสผ่านต้องมีไม่เกิน 64 ตัวอักษร")
-  .regex(/[A-Z]/, "ต้องมีตัวพิมพ์ใหญ่ (A-Z) อย่างน้อย 1 ตัว")
-  .regex(/[a-z]/, "ต้องมีตัวพิมพ์เล็ก (a-z) อย่างน้อย 1 ตัว")
-  .regex(/[0-9]/, "ต้องมีตัวเลข (0-9) อย่างน้อย 1 ตัว");
 
 const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
 

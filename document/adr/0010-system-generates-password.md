@@ -16,7 +16,8 @@ User ของระบบถูกสร้างจากระบบ CRM ต�
 ## Decision
 
 CRM มีหน้าที่แค่ **ยิง API ขอสร้าง user** (email, ชื่อ, role)
-ระบบของเราเป็นผู้ generate password แบบสุ่มที่ปลอดภัย (OTP concept)
+ระบบของเราเป็นผู้ generate password เริ่มต้นแบบสุ่มที่ปลอดภัย โดยรหัสผ่านไม่มีวันหมดอายุตาม product decision
+ส่งรหัสผ่านเริ่มต้นให้ user ทาง email ตาม [login flow](../diagram/login-flow.md)
 และ API ไม่ส่ง password กลับไปให้ CRM
 
 ทางเลือกที่ไม่เลือก:
@@ -31,9 +32,10 @@ CRM มีหน้าที่แค่ **ยิง API ขอสร้าง u
 - CRM ไม่ต้องรู้เรื่อง password เลย integration ง่ายขึ้น
 
 **ข้อเสีย**
-- ระบบเราต้องรับผิดชอบการแจ้ง credential ให้ user เอง
-  ซึ่งยังไม่ได้ตัดสินใจว่าส่งทางไหน (ดู Q1)
+- ระบบเราต้องรับผิดชอบการส่ง email แจ้ง credential ให้ user เอง
 
 ## References
-- [Login Requirements: BR-01, BR-02](../spec/login-requirements.md)
-- [Password Policy](../spec/password-policy.md)
+- [Login Requirements: BR-01, BR-02](../spec/0002-login-requirements.md)
+- [Password Policy](../spec/0003-password-policy.md)
+- [API Contract](../spec/0001-api-contract.md)
+- [Login Flow](../diagram/login-flow.md)

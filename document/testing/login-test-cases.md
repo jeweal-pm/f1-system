@@ -1,7 +1,7 @@
 # Test Cases: Login & Password Management
 
 - **Last updated:** 2026-10-09
-- **Related:** [Acceptance Criteria](../spec/login-requirements.md#6-acceptance-criteria)
+- **Related:** [Acceptance Criteria](../spec/0002-login-requirements.md#6-acceptance-criteria)
 
 ## Login
 

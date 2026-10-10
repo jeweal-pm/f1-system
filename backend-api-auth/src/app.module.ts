@@ -9,7 +9,7 @@ import { LoggerModule } from "nestjs-pino";
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    LoggerModule.forRoot({ pinoHttp: { redact: { paths: ["req.headers.authorization", "req.headers.x-api-key", "req.body.password", "req.body.newPassword", "req.body.currentPassword"], censor: "[REDACTED]" } } }),
+    LoggerModule.forRoot({ pinoHttp: { redact: { paths: ["req.headers.authorization", "req.headers.cookie", "req.headers.x-api-key", "req.body.password", "req.body.newPassword", "req.body.currentPassword", "req.body.confirmPassword"], censor: "[REDACTED]" } } }),
   ],
   controllers: [AuthController],
   providers: [AuthService, EmailService, PrismaLifecycleService],

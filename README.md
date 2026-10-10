@@ -32,6 +32,8 @@ The development Compose file bind-mounts the source and runs Next.js/Nest watch 
 picked up without rebuilding images. Compose builds the development image only the first time, or when
 you explicitly run `pnpm docker:dev:build` after changing a Dockerfile. After changing package dependencies,
 run `pnpm docker:dev:install` to update the shared dependency volumes without a Docker image rebuild.
+The auth container regenerates Prisma Client from the mounted schema before applying migrations at startup,
+so schema changes do not leave the persistent generated-client volume stale.
 Use `pnpm docker:dev:logs` to follow logs and `pnpm docker:dev:down` to stop the stack.
 
 Open `http://localhost:3000`; Mailpit is at `http://localhost:8025`. Create the first Super Admin through

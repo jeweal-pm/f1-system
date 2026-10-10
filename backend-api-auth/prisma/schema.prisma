@@ -9,16 +9,41 @@ datasource db {
 }
 
 model User {
-  id            String    @id
-  name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  role          String    @default("user")
-  createdAt     DateTime
-  updatedAt     DateTime
-  sessions      Session[]
-  accounts      Account[]
+  id               String         @id
+  name             String
+  email            String         @unique
+  emailVerified    Boolean        @default(false)
+  image            String?
+  role             String         @default("user")
+  failedLoginCount Int            @default(0) @map("failed_login_count")
+  lockedUntil      DateTime?      @map("locked_until")
+  lastLoginAt      DateTime?      @map("last_login_at")
+  createdAt        DateTime
+  updatedAt        DateTime
+  sessions         Session[]
+  accounts         Account[]
+  loginAttempts    LoginAttempt[]
+
+  @@schema("auth")
+}
+
+model LoginAttempt {
+  id          String   @id
+  userId      String?  @map("user_id")
+  emailHash   String   @map("email_hash")
+  success     Boolean
+  attemptedAt DateTime @default(now()) @map("attempted_at")
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, attemptedAt])
+  @@index([emailHash, attemptedAt])
+  @@schema("auth")
+}
+
+model LoginLockout {
+  emailHash        String    @id @map("email_hash")
+  failedLoginCount Int       @default(0) @map("failed_login_count")
+  lockedUntil      DateTime? @map("locked_until")
 
   @@schema("auth")
 }
@@ -59,7 +84,7 @@ model Account {
 }
 
 model Verification {
-  id         String   @id
+  id         String    @id
   identifier String
   value      String
   expiresAt  DateTime

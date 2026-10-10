@@ -1,5 +1,7 @@
 # Initial frontend/backend setup
 
+> **Status update (2026-10-09):** Q1 (credential delivery by email) and Q7 (three failures, one-minute lock) are now specified and implemented. Product confirmed that generated passwords do not expire and password changes require the current password. No analytics/tracking is planned now; privacy ownership details remain for production. See [`open-questions.md`](../../open-questions.md) and [`2026-10-09-password-provisioning-login-lockout.md`](2026-10-09-password-provisioning-login-lockout.md). The historical notes below describe the initial setup as of 2026-10-04.
+
 - **Date:** 2026-10-04
 - **Status:** Built and statically verified; full runtime verification awaits Docker/PostgreSQL startup
 - **Architecture:** Accepted Microservices monorepo, with a Next.js frontend, NestJS gateway, and NestJS auth service

@@ -1,0 +1,4 @@
+﻿- Centered the login form in the viewport and replaced the visible auth-check text with a lightweight app-shell skeleton.
+- Constrained the login layout and form controls to the viewport width on narrow screens.
+- Verified `pnpm --filter frontend typecheck` and `pnpm --filter frontend build`; login route returned HTTP 200 and the desktop screenshot was visually checked.
+- Files: `C:/dev/f1-system/frontend/src/features/auth/auth-layout.tsx`, `frontend/src/features/home/app-shell.tsx`, `frontend/src/features/auth/login-form.tsx`; related to `document/spec/0002-login-requirements.md`.

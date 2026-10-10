@@ -1,4 +1,4 @@
-# ADR-0004: ใช้ vanilla-cookieconsent ทำ Consent Banner และเก็บ Consent Log เอง
+# ADR-0009: ใช้ vanilla-cookieconsent ทำ Consent Banner และเก็บ Consent Log เอง
 
 - **Status:** Proposed
 - **Date:** 2026-10-04
@@ -13,10 +13,10 @@
 สถานการณ์ของโปรเจคตอนนี้:
 - เป็น Next.js (App Router) + tRPC ทีมเล็ก งบจำกัด
 - cookie ที่ใช้ส่วนใหญ่เป็น strictly necessary (session, CSRF)
-- มีแผนใช้ analytics 1 ตัว ยังไม่มี marketing pixel
+- ขณะนี้ไม่มีแผนใช้ analytics หรือ marketing tracking และยังไม่โหลด third-party tracking
 - มีเว็บเดียว ภาษาไทยเป็นหลัก
 
-ต้องเลือกว่าจะทำ consent banner และระบบเก็บ consent อย่างไร
+หากในอนาคตเพิ่ม cookie หรือ script ที่ไม่จำเป็น ต้องเลือกว่าจะทำ consent banner และระบบเก็บ consent อย่างไร ก่อนเปิดใช้สิ่งนั้น
 
 ## Decision Drivers
 
@@ -48,20 +48,22 @@
 
 ## Decision
 
-เลือก **Option 2** เพราะจำนวน cookie ที่ไม่จำเป็นยังน้อย
+เสนอ **Option 2** หากมีการเพิ่ม cookie ที่ไม่จำเป็นในอนาคต เพราะจำนวน cookie ที่ไม่จำเป็นยังน้อย
 library ครอบคลุมส่วนที่เสี่ยงทำผิด (การบล็อก script, หน้าตั้งค่า) ให้แล้ว
 และเก็บ consent log ใน DB ของเราได้ตาม Decision Drivers โดยไม่มีค่าใช้จ่าย
+
+การตัดสินใจนี้ยังเป็น Proposed: ปัจจุบันไม่มี analytics/marketing tracking จึงยังไม่ต้องติดตั้ง banner, library หรือ consent log ตามแนวทางนี้
 
 รายละเอียดการ implement:
 - ห่อ library ไว้ใน component กลาง `ConsentProvider` ตัวเดียว
 - script ของ third party ทุกตัวต้องโหลดผ่าน `ConsentProvider` ห้ามใส่ใน layout ตรงๆ
 - บันทึก consent ผ่าน tRPC procedure `consent.record` ลงตาราง `consent_logs`
-- กติกาและรายการ cookie อยู่ที่ `spec/cookie-and-consent.md`
+- กติกาและรายการ cookie อยู่ที่ [Cookie & Consent Spec](../spec/0004-cookie-and-consent.md)
 
 ## Consequences
 
 **ข้อดี**
-- เริ่มใช้งานได้เร็ว ไม่มีค่าใช้จ่าย
+- มีแนวทางให้พิจารณาเมื่อเพิ่ม cookie ที่ไม่จำเป็น โดยไม่มีค่าใช้จ่ายรายเดือน
 - ข้อมูล consent อยู่ในระบบเรา ตรวจสอบและส่งให้หน่วยงานได้เอง
 - ไม่ต้องพึ่ง script ภายนอกเพิ่ม
 
@@ -69,10 +71,10 @@ library ครอบคลุมส่วนที่เสี่ยงทำผ
 - ถ้ามีคนเพิ่ม script ใหม่แล้วลืมอัปเดต cookie inventory จะผิด PDPA โดยไม่รู้ตัว
 - ทีมต้องรับผิดชอบการตามกฎหมายเอง
 
-**สิ่งที่ต้องทำต่อ**
-- [ ] เพิ่ม `vanilla-cookieconsent` ใน `tech-stack.md`
-- [ ] เพิ่มข้อเช็กใน PR template: "เพิ่ม cookie หรือ third-party script ไหม? ถ้าใช่ อัปเดต cookie inventory แล้วหรือยัง"
-- [ ] ให้ฝ่ายกฎหมาย / DPO ตรวจข้อความใน banner ก่อน go-live
+**เงื่อนไขก่อน implement ในอนาคต**
+- ยืนยันว่าจะเพิ่ม cookie หรือ third-party script ที่ไม่จำเป็น
+- ให้ DPO/privacy owner ตรวจข้อกำหนดและข้อความก่อนเปิดใช้งาน
+- จากนั้นจึงเพิ่ม `vanilla-cookieconsent`, consent logging และ checklist ใน PR template
 
 **ทบทวนการตัดสินใจนี้เมื่อ**
 - มี marketing pixel หรือ third-party tracking เกิน 3 ตัว
@@ -80,5 +82,5 @@ library ครอบคลุมส่วนที่เสี่ยงทำผ
 - ต้องรองรับกฎหมายประเทศอื่นเพิ่ม (เช่น GDPR)
 
 ## References
-- [Cookie & Consent Spec](../spec/cookie-and-consent.md)
-- [Tech Stack](../tech-stack.md)
+- [Cookie & Consent Spec](../spec/0004-cookie-and-consent.md)
+- [Tech Stack](tech-stack.md)

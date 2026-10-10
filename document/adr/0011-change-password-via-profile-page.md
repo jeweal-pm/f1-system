@@ -34,12 +34,13 @@ user เปลี่ยนได้เองเมื่อต้องการ
 **ข้อเสีย / ความเสี่ยง**
 - รหัสผ่านที่ระบบ generate อาจถูกใช้ไปตลอด ทั้งที่เคยถูกส่งผ่าน email
   ถ้า email ของ user รั่ว รหัสผ่านก็รั่วด้วย
-- ขัดกับแนวคิด "OTP concept" ที่ตั้งใจให้ใช้ครั้งเดียว (ดู Q3)
+- Product ยืนยันให้รหัสผ่านที่ระบบ generate ไม่มีวันหมดอายุ; user เปลี่ยนเองได้จากหน้า Profile
 
 **ทางลดความเสี่ยงที่ควรพิจารณา**
 - แสดง banner แนะนำ (ไม่บังคับ) ให้เปลี่ยนรหัสผ่าน ถ้ายังใช้รหัสที่ระบบ generate
-- กำหนดวันหมดอายุของรหัสที่ระบบ generate
+- ใช้ lockout และ API rate limit ตาม [ADR-0012](0012-change-flow-login.md) เพื่อลดความเสี่ยงจากการเดารหัสผ่าน
 
 ## References
-- [Login Requirements: BR-04, AC-04](../spec/login-requirements.md)
-- [Open Questions: Q3, Q5](../open-questions.md)
+- [Login Requirements: BR-04, AC-04](../spec/0002-login-requirements.md)
+- [Password Policy](../spec/0003-password-policy.md)
+- [Cookie & Consent](../spec/0004-cookie-and-consent.md)

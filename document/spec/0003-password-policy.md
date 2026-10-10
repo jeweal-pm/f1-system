@@ -24,7 +24,7 @@ Regex อ้างอิง:
 > Policy นี้ง่ายตาม requirement การป้องกันการเดารหัสผ่านจึงพึ่งการล็อกบัญชีชั่วคราว
 > เมื่อใส่ผิด 3 ครั้ง ([ADR-0012](../adr/0012-change-flow-login.md)) ร่วมกับ rate limit ระดับ API
 
-## 2. Password ที่ระบบ generate [จาก flow: OTP concept]
+## 2. Password เริ่มต้นและรหัสผ่านที่ระบบ generate
 
 ใช้ทั้งตอนสร้าง user และตอน forgot password
 
@@ -32,7 +32,7 @@ Regex อ้างอิง:
   (เข้มกว่ากฎข้อ 1 เพราะถูกส่งผ่าน email)
 - สุ่มด้วย cryptographically secure random (เช่น `crypto.randomInt` ใน Node.js, `secrets` ใน Python) ห้ามใช้ `Math.random()`
 - ตัดตัวอักษรที่สับสนง่ายออก เช่น `0 O o 1 l I` [ข้อเสนอ]
-- อายุการใช้งาน: ดู Q3
+- อายุการใช้งาน: ไม่มีวันหมดอายุ; user เปลี่ยนได้จากหน้า Profile ตามการตัดสินใจของ product
 
 ## 3. ข้อความ Error
 

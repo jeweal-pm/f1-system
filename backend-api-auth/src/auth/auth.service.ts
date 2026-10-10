@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual, randomUUID } from "node:crypto";
-import { BadRequestException, ConflictException, Injectable, Logger, ServiceUnavailableException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ConflictException, HttpException, HttpStatus, Injectable, Logger, ServiceUnavailableException, UnauthorizedException } from "@nestjs/common";
 import * as argon2 from "argon2";
 import { z } from "zod";
 import { prisma } from "../database/prisma-client";
@@ -74,7 +74,8 @@ export class AuthService {
     const bucketKey = createHash("sha256").update(`${ip}:${normalizedEmail}`).digest("hex");
     const ipBucket = await incrementForgotLimit(createHash("sha256").update(ip).digest("hex"));
     const emailBucket = await incrementForgotLimit(bucketKey);
-    if (ipBucket <= 30 && emailBucket <= 5) void this.deliverForgotPassword(normalizedEmail);
+    if (ipBucket > 30 || emailBucket > 5) throw new HttpException("Too many forgot-password requests", HttpStatus.TOO_MANY_REQUESTS);
+    void this.deliverForgotPassword(normalizedEmail);
     return { accepted: true };
   }
 

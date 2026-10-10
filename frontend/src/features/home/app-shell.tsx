@@ -60,7 +60,35 @@ export function AppShell({ children, breadcrumb = "Home" }: Readonly<{ children:
     router.refresh();
   }
 
-  if (isPending || !session) return <main className="flex min-h-screen items-center justify-center text-sm text-[#687887]">กำลังตรวจสอบสิทธิ์…</main>;
+  if (isPending) {
+    return (
+      <div className="flex min-h-screen bg-white" aria-busy="true" aria-label="Loading application">
+        <aside className="hidden w-[187px] shrink-0 border-r border-[#e0e6e9] px-5 pt-5 md:block">
+          <div className="mb-8 h-8 w-28 animate-pulse rounded bg-slate-100" />
+          <div className="space-y-4">
+            {Array.from({ length: 12 }, (_, index) => <div key={index} className="h-3 animate-pulse rounded bg-slate-100" style={{ width: `${58 + (index % 3) * 12}%` }} />)}
+          </div>
+        </aside>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="flex h-[46px] shrink-0 items-center justify-between border-b border-[#e0e6e9] px-5">
+            <div className="h-3 w-16 animate-pulse rounded bg-slate-100" />
+            <div className="h-6 w-24 animate-pulse rounded-full bg-slate-100" />
+          </header>
+          <main className="flex-1 p-6 md:p-12">
+            <div className="mx-auto max-w-[1035px]">
+              <div className="mb-3 h-5 w-32 animate-pulse rounded bg-slate-100" />
+              <div className="mb-7 h-3 w-48 animate-pulse rounded bg-slate-100" />
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: 6 }, (_, index) => <div key={index} className="h-36 animate-pulse rounded-xl border border-slate-100 bg-slate-50" />)}
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) return null;
 
   return (
     <div className="flex h-screen min-h-[640px] overflow-hidden bg-white">
